@@ -23,7 +23,7 @@ class TRP_CO_Database {
             original TEXT NOT NULL,
             translated TEXT NOT NULL,
             page_id BIGINT(20) UNSIGNED NOT NULL,
-            language VARCHAR(10) NOT NULL DEFAULT 'en',
+            language VARCHAR(20) NOT NULL DEFAULT 'en',
             override_type VARCHAR(20) NOT NULL DEFAULT 'string',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -37,7 +37,10 @@ class TRP_CO_Database {
     }
 
     /**
-     * Add override_type column if it doesn't exist (upgrade from v1.0.0).
+     * Schema upgrades for existing tables:
+     * - v1.0.0 → add override_type column.
+     * - v1.2.0 → widen language from VARCHAR(10) to VARCHAR(20) to fit full
+     *   locales such as de_DE_formal. Existing values are kept as-is.
      */
     public static function maybe_upgrade_table() {
         global $wpdb;
@@ -46,6 +49,11 @@ class TRP_CO_Database {
         $column = $wpdb->get_results( "SHOW COLUMNS FROM {$table} LIKE 'override_type'" );
         if ( empty( $column ) ) {
             $wpdb->query( "ALTER TABLE {$table} ADD COLUMN override_type VARCHAR(20) NOT NULL DEFAULT 'string' AFTER language" );
+        }
+
+        $language = $wpdb->get_row( "SHOW COLUMNS FROM {$table} LIKE 'language'" );
+        if ( $language && strtolower( $language->Type ) === 'varchar(10)' ) {
+            $wpdb->query( "ALTER TABLE {$table} MODIFY COLUMN language VARCHAR(20) NOT NULL DEFAULT 'en'" );
         }
     }
 
@@ -80,7 +88,7 @@ class TRP_CO_Database {
     /**
      * Insert a new override.
      */
-    public static function insert( $original, $translated, $page_id, $language = 'en', $override_type = 'string' ) {
+    public static function insert( $original, $translated, $page_id, $language = 'all', $override_type = 'string' ) {
         global $wpdb;
         $table = self::get_table_name();
 
@@ -100,7 +108,7 @@ class TRP_CO_Database {
     /**
      * Update an existing override.
      */
-    public static function update( $id, $original, $translated, $page_id, $language = 'en', $override_type = 'string' ) {
+    public static function update( $id, $original, $translated, $page_id, $language = 'all', $override_type = 'string' ) {
         global $wpdb;
         $table = self::get_table_name();
 

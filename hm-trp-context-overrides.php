@@ -2,19 +2,42 @@
 /**
  * Plugin Name: HM TRP Context Overrides
  * Description: Extiende TranslatePress para permitir (a nivel de página) sobreescritura contextual.
- * Version: 1.1.1
+ * Version: 1.2.0
  * Author: Hot Marketing
  * Requires at least: 6.0
  * Requires PHP: 7.4
+ * Plugin URI: https://github.com/hotmarketing/trp-por-contexto
+ * License: GPL-2.0-or-later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Update URI: https://github.com/hotmarketing/trp-por-contexto
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-define('TRP_CO_VERSION', '1.1.1');
+define('TRP_CO_VERSION', '1.2.0');
+define('TRP_CO_PLUGIN_FILE', __FILE__);
 define('TRP_CO_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('TRP_CO_PLUGIN_URL', plugin_dir_url(__FILE__));
+
+// Autoloader de Composer (plugin-update-checker). Solo existe en el ZIP del release.
+$trp_co_autoload = TRP_CO_PLUGIN_DIR . 'vendor/autoload.php';
+if (file_exists($trp_co_autoload)) {
+    require_once $trp_co_autoload;
+}
+unset($trp_co_autoload);
+
+/**
+ * Actualizaciones desde GitHub Releases. Corre aunque TranslatePress no esté activo:
+ * el plugin debe poder actualizarse igual.
+ */
+function trp_co_boot_updater()
+{
+    require_once TRP_CO_PLUGIN_DIR . 'includes/class-updater.php';
+    TRP_CO_Updater::boot();
+}
+add_action('plugins_loaded', 'trp_co_boot_updater');
 
 /**
  * Check if TranslatePress is active before loading.
@@ -27,6 +50,7 @@ function trp_co_init()
     }
 
     require_once TRP_CO_PLUGIN_DIR . 'includes/class-database.php';
+    require_once TRP_CO_PLUGIN_DIR . 'includes/class-languages.php';
     require_once TRP_CO_PLUGIN_DIR . 'includes/class-override-engine.php';
     require_once TRP_CO_PLUGIN_DIR . 'includes/class-admin-page.php';
 

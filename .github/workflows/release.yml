@@ -1,0 +1,71 @@
+name: Release
+
+# Push a tag like v1.2.0 → this builds hm-trp-context-overrides.zip (with vendor/) and
+# attaches it to a GitHub Release. Sites running the plugin pick it up from there in
+# Dashboard → Updates. Tags with a suffix (v1.3.0-rc.1) are published as prereleases,
+# which the updater skips.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          tools: composer:v2
+          coverage: none
+
+      - name: Run tests
+        run: ./tests/run.sh
+
+      - name: Install production dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+      - name: Build ZIP
+        run: |
+          # WordPress identifies the plugin by the folder inside the ZIP. It MUST be
+          # hm-trp-context-overrides/ (not the repo name): a different folder installs as a
+          # second plugin, and deleting the old one would run uninstall.php.
+          SLUG=hm-trp-context-overrides
+          WORKDIR="$RUNNER_TEMP/$SLUG"
+          mkdir -p "$WORKDIR"
+          rsync -a ./ "$WORKDIR/" \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude '.gitignore' \
+            --exclude 'tests' \
+            --exclude 'composer.json' \
+            --exclude 'composer.lock'
+
+          # The TAG sets the version, not the header in the repo. A suffixed tag
+          # (v1.3.0-rc.1) produces a suffixed header, so version_compare orders it
+          # below the stable release and never "burns" the clean number.
+          VERSION="${GITHUB_REF_NAME#v}"
+          MAIN="$WORKDIR/$SLUG.php"
+          sed -i -E "s/^( \* Version:[[:space:]]*).*/\1${VERSION}/" "$MAIN"
+          sed -i -E "s/(define\('TRP_CO_VERSION', ')[^']*('\);)/\1${VERSION}\2/" "$MAIN"
+          grep -E "Version:|TRP_CO_VERSION'" "$MAIN"
+          grep -q "Version: ${VERSION}$" "$MAIN"
+          grep -q "define('TRP_CO_VERSION', '${VERSION}');" "$MAIN"
+
+          ( cd "$RUNNER_TEMP" && zip -rq "$GITHUB_WORKSPACE/$SLUG.zip" "$SLUG" )
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: hm-trp-context-overrides.zip
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          prerelease: ${{ contains(github.ref_name, '-') }}

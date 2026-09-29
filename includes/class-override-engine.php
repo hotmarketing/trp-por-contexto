@@ -17,9 +17,13 @@ class TRP_CO_Override_Engine {
     /**
      * Apply contextual overrides to the translated HTML.
      *
+     * TranslatePress solo dispara este filtro para idiomas que no son el
+     * predeterminado.
+     *
      * @param string $html           The fully translated HTML.
      * @param string $TRP_LANGUAGE   Current language (e.g. en_US).
-     * @param string $language_code  Language code (e.g. en).
+     * @param string $language_code  Locale being rendered (e.g. en_US). In the translation
+     *                               editor preview it can differ from $TRP_LANGUAGE.
      * @return string
      */
     public function apply_overrides( $html, $TRP_LANGUAGE = '', $language_code = '' ) {
@@ -28,6 +32,7 @@ class TRP_CO_Override_Engine {
         }
 
         $page_id = $this->get_current_page_id();
+        $locale  = $language_code ? (string) $language_code : (string) $TRP_LANGUAGE;
 
         // Debug mode: add ?trp_co_debug=1 to any frontend URL to see debug info.
         // Solo para administradores: expone page_id, overrides y fragmentos del HTML.
@@ -36,7 +41,7 @@ class TRP_CO_Override_Engine {
 
         if ( $debug ) {
             $debug_log[] = 'page_id detected: ' . ( $page_id ? $page_id : 'NONE' );
-            $debug_log[] = 'language: ' . $language_code;
+            $debug_log[] = 'language: ' . $locale . ' (url slug: ' . TRP_CO_Languages::get_url_slug( $locale ) . ')';
         }
 
         if ( ! $page_id ) {
@@ -60,6 +65,17 @@ class TRP_CO_Override_Engine {
         }
 
         foreach ( $overrides as $override ) {
+            $override_language = isset( $override->language ) ? $override->language : '';
+
+            // Sin locale conocido se conserva el comportamiento anterior a 1.2.0: aplicar siempre.
+            if ( $locale !== '' && ! TRP_CO_Languages::matches( $override_language, $locale ) ) {
+                if ( $debug ) {
+                    $debug_log[] = 'override #' . $override->id
+                        . ' skipped | language: ' . $override_language;
+                }
+                continue;
+            }
+
             $type = isset( $override->override_type ) ? $override->override_type : 'string';
 
             if ( $type === 'selector' ) {

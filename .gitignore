@@ -1,0 +1,10 @@
+# Composer (composer.lock SÍ se commitea: los releases deben ser reproducibles)
+vendor/
+
+# Build
+dist/
+*.zip
+
+# OS
+.DS_Store
+__MACOSX/

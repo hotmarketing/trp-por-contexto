@@ -144,9 +144,10 @@ class TRP_CO_Admin_Page {
             $translated    = isset( $_POST['translated'] ) ? wp_unslash( $_POST['translated'] ) : '';
             $page_id       = isset( $_POST['page_id'] ) ? absint( $_POST['page_id'] ) : 0;
             $override_type = isset( $_POST['override_type'] ) && $_POST['override_type'] === 'selector' ? 'selector' : 'string';
+            $language      = $this->get_posted_language();
 
             if ( $original && $translated && $page_id ) {
-                TRP_CO_Database::insert( $original, $translated, $page_id, 'en', $override_type );
+                TRP_CO_Database::insert( $original, $translated, $page_id, $language, $override_type );
             }
 
             wp_safe_redirect( admin_url( 'options-general.php?page=trp-context-overrides&msg=added' ) );
@@ -160,14 +161,34 @@ class TRP_CO_Admin_Page {
             $translated    = isset( $_POST['translated'] ) ? wp_unslash( $_POST['translated'] ) : '';
             $page_id       = isset( $_POST['page_id'] ) ? absint( $_POST['page_id'] ) : 0;
             $override_type = isset( $_POST['override_type'] ) && $_POST['override_type'] === 'selector' ? 'selector' : 'string';
+            $existing      = $id ? TRP_CO_Database::get_override( $id ) : null;
+            $language      = $this->get_posted_language( $existing ? $existing->language : null );
 
             if ( $id && $original && $translated && $page_id ) {
-                TRP_CO_Database::update( $id, $original, $translated, $page_id, 'en', $override_type );
+                TRP_CO_Database::update( $id, $original, $translated, $page_id, $language, $override_type );
             }
 
             wp_safe_redirect( admin_url( 'options-general.php?page=trp-context-overrides&msg=updated' ) );
             exit;
         }
+    }
+
+    /**
+     * Idioma enviado en el formulario, validado contra "all" y los idiomas de
+     * traducción de TranslatePress. Al editar también se acepta el valor que ya
+     * tenía la fila (p. ej. un 'en' legacy que no corresponde a ningún idioma
+     * actual), para no cambiarlo sin que el usuario lo elija.
+     */
+    private function get_posted_language( $stored = null ) {
+        $language = isset( $_POST['language'] ) ? sanitize_text_field( wp_unslash( $_POST['language'] ) ) : TRP_CO_Languages::ALL;
+
+        $allowed = array_keys( TRP_CO_Languages::get_translation_languages() );
+        $allowed[] = TRP_CO_Languages::ALL;
+        if ( $stored !== null && $stored !== '' ) {
+            $allowed[] = $stored;
+        }
+
+        return in_array( $language, $allowed, true ) ? $language : TRP_CO_Languages::ALL;
     }
 
     /**
@@ -242,6 +263,29 @@ class TRP_CO_Admin_Page {
                                 <div id="trp-co-search-results" class="trp-co-search-results"></div>
                             </td>
                         </tr>
+                        <?php
+                        $languages        = TRP_CO_Languages::get_translation_languages();
+                        $current_language = $editing ? TRP_CO_Languages::resolve_locale( $editing->language ) : TRP_CO_Languages::ALL;
+                        ?>
+                        <tr>
+                            <th><label for="trp-co-language">Language</label></th>
+                            <td>
+                                <select name="language" id="trp-co-language">
+                                    <option value="<?php echo esc_attr( TRP_CO_Languages::ALL ); ?>" <?php selected( $current_language, TRP_CO_Languages::ALL ); ?>>All languages</option>
+                                    <?php foreach ( $languages as $code => $name ) : ?>
+                                        <option value="<?php echo esc_attr( $code ); ?>" <?php selected( $current_language, $code ); ?>>
+                                            <?php echo esc_html( $name . ' (' . $code . ')' ); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                    <?php if ( $current_language !== TRP_CO_Languages::ALL && ! isset( $languages[ $current_language ] ) ) : ?>
+                                        <option value="<?php echo esc_attr( $current_language ); ?>" selected>
+                                            <?php echo esc_html( $current_language . ' (not an active translation language)' ); ?>
+                                        </option>
+                                    <?php endif; ?>
+                                </select>
+                                <p class="description">Translation language this override applies to. The default language is never translated, so it is not listed.</p>
+                            </td>
+                        </tr>
                         <tr id="trp-co-row-original">
                             <th><label for="trp-co-original" id="trp-co-original-label">Original string (global translation)</label></th>
                             <td>
@@ -280,10 +324,11 @@ class TRP_CO_Admin_Page {
                         <tr>
                             <th style="width:5%">ID</th>
                             <th style="width:8%">Type</th>
-                            <th style="width:27%">Original string</th>
-                            <th style="width:27%">Contextual translation</th>
-                            <th style="width:18%">Page</th>
-                            <th style="width:15%">Actions</th>
+                            <th style="width:24%">Original string</th>
+                            <th style="width:24%">Contextual translation</th>
+                            <th style="width:16%">Page</th>
+                            <th style="width:10%">Language</th>
+                            <th style="width:13%">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -320,6 +365,7 @@ class TRP_CO_Admin_Page {
                                     ?>
                                     <br><small>ID: <?php echo esc_html( $o->page_id ); ?></small>
                                 </td>
+                                <td><?php echo esc_html( TRP_CO_Languages::get_label( $o->language ) ); ?></td>
                                 <td>
                                     <a href="<?php echo esc_url( admin_url( 'options-general.php?page=trp-context-overrides&action=edit&id=' . $o->id ) ); ?>"
                                        class="button button-small">Edit</a>
