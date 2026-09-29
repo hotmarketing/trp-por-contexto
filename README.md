@@ -14,7 +14,7 @@ TranslatePress traduce cada string de forma global: si "Inicio" se traduce como 
 
 1. Descarga el ZIP de la última versión desde **[Releases](https://github.com/hotmarketing/trp-por-contexto/releases)** (`hm-trp-context-overrides.zip`).
 2. En WordPress: *Plugins → Añadir nuevo → Subir plugin* y sube ese ZIP.
-3. Actívalo. La configuración está en *Ajustes → TRP Context Overrides*.
+3. Actívalo. Los overrides se administran en *Ajustes → TranslatePress*, pestaña **Context Overrides** (también hay un enlace "Overrides" en la fila del plugin, en la lista de plugins).
 
 > ⚠️ **No uses el botón "Code → Download ZIP" de GitHub.** Ese ZIP trae la carpeta `trp-por-contexto-main/`, y WordPress lo instalaría como un plugin distinto. Si después borras el original desde el admin, se ejecuta su desinstalación, que **elimina la tabla con todos tus overrides**. Usa siempre el ZIP de Releases, cuya carpeta es `hm-trp-context-overrides/`. (Desde la 1.2.0, la desinstalación no borra la tabla si detecta otra copia instalada, pero no dependas de eso.)
 

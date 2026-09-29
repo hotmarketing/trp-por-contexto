@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0 (2026-09-29)
+- La página se mudó de *Ajustes → TRP Context Overrides* a una pestaña **Context Overrides** dentro de *Ajustes → TranslatePress*, junto a las demás pestañas de TranslatePress. Ya no aparece como entrada suelta en el menú Ajustes.
+- La URL anterior (`options-general.php?page=trp-context-overrides`) redirige a la nueva, así que los marcadores siguen funcionando.
+- Enlace "Overrides" en la fila del plugin, en la lista de plugins.
+- La página usa el encabezado y los estilos de TranslatePress, y marca *Ajustes → TranslatePress* en el menú.
+
 ## 1.2.1 (2026-09-29)
 - El updater solo considera GitHub Releases con el asset `hm-trp-context-overrides.zip`. Antes, si el último release no lo traía, Plugin Update Checker caía al tag más alto o a la rama `main` y ofrecía el código fuente (sin `vendor/`), lo que dejaba el plugin sin updater.
 

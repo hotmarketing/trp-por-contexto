@@ -6,32 +6,137 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class TRP_CO_Admin_Page {
 
+    const PAGE_SLUG = 'trp-context-overrides';
+
+    /**
+     * Hook de la página: WordPress antepone "admin_page_" a las páginas sin menú visible.
+     */
+    const PAGE_HOOK = 'admin_page_trp-context-overrides';
+
     public function __construct() {
         add_action( 'admin_menu', array( $this, 'add_menu_page' ) );
+        add_filter( 'trp_settings_tabs', array( $this, 'add_trp_tab' ) );
+        add_action( 'admin_page_access_denied', array( $this, 'redirect_legacy_url' ) );
+        add_filter( 'plugin_action_links_' . plugin_basename( TRP_CO_PLUGIN_FILE ), array( $this, 'add_plugin_action_link' ) );
+        add_filter( 'parent_file', array( $this, 'highlight_parent_menu' ) );
+        add_filter( 'submenu_file', array( $this, 'highlight_submenu' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
         add_action( 'wp_ajax_trp_co_search_pages', array( $this, 'ajax_search_pages' ) );
         add_action( 'admin_init', array( $this, 'handle_form_actions' ) );
     }
 
     /**
-     * Register the admin menu page under Settings.
+     * URL de la página, con parámetros opcionales.
+     */
+    public static function page_url( $args = array() ) {
+        return add_query_arg( array_merge( array( 'page' => self::PAGE_SLUG ), $args ), admin_url( 'admin.php' ) );
+    }
+
+    /**
+     * Registra la página sin entrada propia en el menú: se abre desde la pestaña
+     * "Context Overrides" de TranslatePress (Ajustes → TranslatePress), igual que las
+     * páginas de los complementos de TranslatePress ('TRPHidden' es su padre oculto).
      */
     public function add_menu_page() {
-        add_options_page(
-            'TRP Context Overrides',
-            'TRP Context Overrides',
+        add_submenu_page(
+            'TRPHidden',
+            'Context Overrides',
+            'Context Overrides',
             'manage_options',
-            'trp-context-overrides',
+            self::PAGE_SLUG,
             array( $this, 'render_page' )
         );
+    }
+
+    /**
+     * Agrega la pestaña a la barra de TranslatePress.
+     */
+    public function add_trp_tab( $tabs ) {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $tabs;
+        }
+
+        $tabs[] = array(
+            'name' => 'Context Overrides',
+            'url'  => self::page_url(),
+            'page' => self::PAGE_SLUG,
+        );
+
+        return $tabs;
+    }
+
+    /**
+     * Hasta la 1.2.x la página vivía en Ajustes (options-general.php). Redirige esa URL
+     * para no romper marcadores.
+     */
+    public function redirect_legacy_url() {
+        global $pagenow;
+
+        if ( $pagenow === 'options-general.php' && isset( $_GET['page'] ) && $_GET['page'] === self::PAGE_SLUG ) {
+            $args = array();
+            foreach ( array( 'action', 'id', 'msg' ) as $key ) {
+                if ( isset( $_GET[ $key ] ) ) {
+                    $args[ $key ] = sanitize_key( wp_unslash( $_GET[ $key ] ) );
+                }
+            }
+            wp_safe_redirect( self::page_url( $args ) );
+            exit;
+        }
+    }
+
+    /**
+     * La página no tiene entrada de menú propia: marca Ajustes → TranslatePress como
+     * activo mientras se está en ella.
+     */
+    private function is_our_page() {
+        global $plugin_page;
+        return $plugin_page === self::PAGE_SLUG;
+    }
+
+    public function highlight_parent_menu( $parent_file ) {
+        if ( ! $this->is_our_page() ) {
+            return $parent_file;
+        }
+
+        // Justo después de este filtro, get_admin_page_parent() recalcula el padre y
+        // encuentra la página bajo 'TRPHidden'. Ese recálculo respeta este mapa.
+        global $_wp_real_parent_file;
+        $_wp_real_parent_file['TRPHidden'] = 'options-general.php';
+
+        return 'options-general.php';
+    }
+
+    public function highlight_submenu( $submenu_file ) {
+        return $this->is_our_page() ? 'translate-press' : $submenu_file;
+    }
+
+    /**
+     * Enlace "Overrides" en la fila del plugin, en la lista de plugins.
+     */
+    public function add_plugin_action_link( $links ) {
+        if ( current_user_can( 'manage_options' ) ) {
+            array_unshift( $links, '<a href="' . esc_url( self::page_url() ) . '">Overrides</a>' );
+        }
+        return $links;
     }
 
     /**
      * Enqueue admin CSS and JS only on our page.
      */
     public function enqueue_assets( $hook ) {
-        if ( $hook !== 'settings_page_trp-context-overrides' ) {
+        if ( $hook !== self::PAGE_HOOK ) {
             return;
+        }
+
+        // Estilos de TranslatePress para que la pestaña se vea como las suyas. Si algún día
+        // cambia la ruta, la página sigue funcionando con los estilos de WordPress.
+        if ( defined( 'TRP_PLUGIN_DIR' ) && defined( 'TRP_PLUGIN_URL' ) && file_exists( TRP_PLUGIN_DIR . 'assets/css/trp-back-end-style.css' ) ) {
+            wp_enqueue_style(
+                'trp-settings-style',
+                TRP_PLUGIN_URL . 'assets/css/trp-back-end-style.css',
+                array(),
+                defined( 'TRP_PLUGIN_VERSION' ) ? TRP_PLUGIN_VERSION : false
+            );
         }
 
         wp_enqueue_style(
@@ -120,7 +225,7 @@ class TRP_CO_Admin_Page {
             $id = isset( $_GET['id'] ) ? absint( $_GET['id'] ) : 0;
             check_admin_referer( 'trp_co_delete_' . $id );
             TRP_CO_Database::delete( $id );
-            wp_safe_redirect( admin_url( 'options-general.php?page=trp-context-overrides&msg=deleted' ) );
+            wp_safe_redirect( self::page_url( array( 'msg' => 'deleted' ) ) );
             exit;
         }
 
@@ -150,7 +255,7 @@ class TRP_CO_Admin_Page {
                 TRP_CO_Database::insert( $original, $translated, $page_id, $language, $override_type );
             }
 
-            wp_safe_redirect( admin_url( 'options-general.php?page=trp-context-overrides&msg=added' ) );
+            wp_safe_redirect( self::page_url( array( 'msg' => 'added' ) ) );
             exit;
         }
 
@@ -168,7 +273,7 @@ class TRP_CO_Admin_Page {
                 TRP_CO_Database::update( $id, $original, $translated, $page_id, $language, $override_type );
             }
 
-            wp_safe_redirect( admin_url( 'options-general.php?page=trp-context-overrides&msg=updated' ) );
+            wp_safe_redirect( self::page_url( array( 'msg' => 'updated' ) ) );
             exit;
         }
     }
@@ -203,8 +308,15 @@ class TRP_CO_Admin_Page {
         $overrides = TRP_CO_Database::get_overrides();
         $msg       = isset( $_GET['msg'] ) ? sanitize_text_field( $_GET['msg'] ) : '';
         ?>
-        <div class="wrap">
-            <h1>TRP Context Overrides</h1>
+        <div id="trp-settings-page" class="wrap trp-co-page">
+            <?php
+            if ( defined( 'TRP_PLUGIN_DIR' ) && file_exists( TRP_PLUGIN_DIR . 'partials/settings-header.php' ) ) {
+                require TRP_PLUGIN_DIR . 'partials/settings-header.php';
+            }
+            do_action( 'trp_settings_navigation_tabs' );
+            ?>
+            <div class="trp-co-content">
+            <hr class="wp-header-end">
 
             <?php if ( $msg === 'added' ) : ?>
                 <div class="notice notice-success is-dismissible"><p>Override added.</p></div>
@@ -367,10 +479,10 @@ class TRP_CO_Admin_Page {
                                 </td>
                                 <td><?php echo esc_html( TRP_CO_Languages::get_label( $o->language ) ); ?></td>
                                 <td>
-                                    <a href="<?php echo esc_url( admin_url( 'options-general.php?page=trp-context-overrides&action=edit&id=' . $o->id ) ); ?>"
+                                    <a href="<?php echo esc_url( self::page_url( array( 'action' => 'edit', 'id' => $o->id ) ) ); ?>"
                                        class="button button-small">Edit</a>
                                     <a href="<?php echo esc_url( wp_nonce_url(
-                                        admin_url( 'options-general.php?page=trp-context-overrides&trp_co_action=delete&id=' . $o->id ),
+                                        self::page_url( array( 'trp_co_action' => 'delete', 'id' => $o->id ) ),
                                         'trp_co_delete_' . $o->id
                                     ) ); ?>"
                                        class="button button-small button-link-delete"
@@ -381,6 +493,7 @@ class TRP_CO_Admin_Page {
                     </tbody>
                 </table>
             <?php endif; ?>
+            </div>
         </div>
         <?php
     }

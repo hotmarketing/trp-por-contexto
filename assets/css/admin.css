@@ -66,3 +66,8 @@
     background: #e0ecf5;
     color: #1e4a6a;
 }
+
+/* Dentro de la pestaña de TranslatePress: sus estilos quitan el margen de .wrap. */
+.trp-co-page .trp-co-content {
+    padding: 0 32px 32px;
+}
