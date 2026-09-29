@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.2.1 (2026-09-29)
+- El updater solo considera GitHub Releases con el asset `hm-trp-context-overrides.zip`. Antes, si el último release no lo traía, Plugin Update Checker caía al tag más alto o a la rama `main` y ofrecía el código fuente (sin `vendor/`), lo que dejaba el plugin sin updater.
+
 ## 1.2.0 (2026-09-29)
 - **Actualizaciones automáticas desde GitHub.** Las versiones nuevas aparecen en Escritorio → Actualizaciones (Plugin Update Checker, sin token). Solo se instala el ZIP adjunto al Release, nunca el código fuente. La 1.2.0 hay que subirla a mano una vez; de ahí en adelante se actualiza sola.
 - **Overrides por idioma.** El formulario tiene un selector de idioma: "All languages" o cualquiera de los idiomas de traducción de TranslatePress (el predeterminado no aparece porque nunca se traduce). Se guarda el locale completo (p. ej. `en_US`).

@@ -12,6 +12,9 @@
  *     vendor/, así que instalarlo dejaría el plugin duplicado y sin este updater.
  *   - El "latest release" de GitHub ignora los prereleases, así que tags como
  *     v1.3.0-rc.1 nunca llegan a los sitios normales.
+ *   - only_latest_release(): REQUIRE_RELEASE_ASSETS por sí solo NO basta. Si el último
+ *     release no trae el asset, PUC pasa a sus otras estrategias (el tag más alto y
+ *     luego la rama main) y ofrece el zipball de GitHub. Se dejan solo los releases.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -47,6 +50,7 @@ final class TRP_CO_Updater {
         $checker->setBranch( 'main' );
         $checker->getVcsApi()->enableReleaseAssets( '/^' . preg_quote( self::SLUG, '/' ) . '\.zip$/', self::REQUIRE_RELEASE_ASSETS );
 
+        add_filter( 'puc_vcs_update_detection_strategies-' . self::SLUG, array( __CLASS__, 'only_latest_release' ) );
         add_filter( 'puc_request_update_result-' . self::SLUG, array( __CLASS__, 'complete_update' ) );
         add_filter( 'puc_request_info_result-' . self::SLUG, array( __CLASS__, 'complete_info' ) );
     }
@@ -66,6 +70,16 @@ final class TRP_CO_Updater {
             return current_user_can( 'update_plugins' );
         }
         return true;
+    }
+
+    /**
+     * Deja solo la estrategia "latest release". Sin esto, si el último release no tiene
+     * el asset hm-trp-context-overrides.zip, PUC cae a "latest tag" (que además incluye
+     * tags de prerelease) y a "branch", y ofrece el zipball: sin vendor/ y con otra
+     * carpeta. Mejor no ofrecer actualización que ofrecer una rota.
+     */
+    public static function only_latest_release( $strategies ) {
+        return array_intersect_key( (array) $strategies, array( 'latest_release' => true ) );
     }
 
     /**

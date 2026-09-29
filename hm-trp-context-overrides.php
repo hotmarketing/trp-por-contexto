@@ -2,7 +2,7 @@
 /**
  * Plugin Name: HM TRP Context Overrides
  * Description: Extiende TranslatePress para permitir (a nivel de página) sobreescritura contextual.
- * Version: 1.2.0
+ * Version: 1.2.1
  * Author: Hot Marketing
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('TRP_CO_VERSION', '1.2.0');
+define('TRP_CO_VERSION', '1.2.1');
 define('TRP_CO_PLUGIN_FILE', __FILE__);
 define('TRP_CO_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('TRP_CO_PLUGIN_URL', plugin_dir_url(__FILE__));
