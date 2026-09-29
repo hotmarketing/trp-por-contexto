@@ -1,0 +1,68 @@
+.trp-co-form-wrap {
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #ccd0d4;
+    margin: 15px 0;
+    max-width: 800px;
+}
+
+.trp-co-search-results {
+    position: absolute;
+    z-index: 100;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    width: 25em;
+}
+
+.trp-co-search-results .trp-co-result-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.trp-co-search-results .trp-co-result-item:hover {
+    background: #f0f6fc;
+}
+
+.trp-co-html-preview {
+    margin-bottom: 4px;
+    padding: 4px;
+    background: #f9f9f9;
+    border: 1px solid #eee;
+    word-break: break-word;
+}
+
+.trp-co-html-source {
+    font-size: 12px;
+    background: #f5f5f5;
+    padding: 8px;
+    margin-top: 4px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.trp-co-toggle-source {
+    font-size: 12px;
+}
+
+.trp-co-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.trp-co-badge-string {
+    background: #e5f5e0;
+    color: #2d6a1e;
+}
+
+.trp-co-badge-selector {
+    background: #e0ecf5;
+    color: #1e4a6a;
+}
