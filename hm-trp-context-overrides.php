@@ -5,7 +5,7 @@
  * Version: 1.3.0
  * Author: Hot Marketing
  * Requires at least: 6.0
- * Requires PHP: 7.4
+ * Requires PHP: 8.3
  * Plugin URI: https://github.com/hotmarketing/trp-por-contexto
  * License: GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html

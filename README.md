@@ -7,7 +7,7 @@ TranslatePress traduce cada string de forma global: si "Inicio" se traduce como 
 ## Requisitos
 
 - WordPress 6.0+
-- PHP 7.4+
+- PHP 8.3+
 - TranslatePress activo
 
 ## Instalación

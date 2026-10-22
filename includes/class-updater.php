@@ -88,7 +88,7 @@ final class TRP_CO_Updater {
     public static function complete_update( $update ) {
         if ( is_object( $update ) ) {
             $update->tested       = empty( $update->tested ) ? self::WP_TESTED : $update->tested;
-            $update->requires_php = empty( $update->requires_php ) ? '7.4' : $update->requires_php;
+            $update->requires_php = empty( $update->requires_php ) ? '8.3' : $update->requires_php;
         }
         return $update;
     }
@@ -100,7 +100,7 @@ final class TRP_CO_Updater {
         if ( is_object( $info ) ) {
             $info->tested       = empty( $info->tested ) ? self::WP_TESTED : $info->tested;
             $info->requires     = empty( $info->requires ) ? '6.0' : $info->requires;
-            $info->requires_php = empty( $info->requires_php ) ? '7.4' : $info->requires_php;
+            $info->requires_php = empty( $info->requires_php ) ? '8.3' : $info->requires_php;
         }
         return $info;
     }

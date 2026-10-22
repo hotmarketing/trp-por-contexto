@@ -1,5 +1,9 @@
 # Changelog
 
+## Sin publicar
+- **Requiere PHP 8.3 o superior** (antes 7.4). PHP 7.4 dejó de recibir parches de seguridad en 2022 y 8.2 los deja de recibir el 31 de diciembre de 2026. Un sitio con PHP más viejo no verá la actualización como instalable en Escritorio → Actualizaciones.
+- El ZIP del release se arma y se prueba con PHP 8.3.
+
 ## 1.3.0 (2026-09-29)
 - La página se mudó de *Ajustes → TRP Context Overrides* a una pestaña **Context Overrides** dentro de *Ajustes → TranslatePress*, junto a las demás pestañas de TranslatePress. Ya no aparece como entrada suelta en el menú Ajustes.
 - La URL anterior (`options-general.php?page=trp-context-overrides`) redirige a la nueva, así que los marcadores siguen funcionando.
